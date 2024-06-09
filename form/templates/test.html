@@ -1,0 +1,8 @@
+{% from 'bootstrap5/form.html' import render_field %}
+
+<form method="post">
+    {{ form.csrf_token() }}
+    {{ render_field(form.username, class='myClass') }}
+    {{ render_field(form.password, placeholder='Your Password') }}
+    {{ render_field(form.submit) }}
+</form>
