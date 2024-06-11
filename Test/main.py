@@ -1,14 +1,6 @@
-from flask import Flask, render_template, request
+import sqlite3
 
-app = Flask(__name__)
+db = sqlite3.connect('books-collection.db')
+cursor = db.cursor()
 
-@app.route('/')
-def home():
-    return render_template("index.html")
-
-@app.route('/login', methods=['POST'])
-def login():
-    return "Name: " + request.form['name'] + " Email: " + request.form['email']
-
-if __name__ == "__main__":
-    app.run(debug=True)
+cursor.execute("CREATE TABLE books (id INTEGER PRIMARY KEY, title varchar(250) NOT NULL UNIQUE, author varchar(250) NOT NULL, rating FLOAT NOT NULL)")
