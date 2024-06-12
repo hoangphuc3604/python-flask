@@ -3,10 +3,8 @@ from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, URL
-from flask_ckeditor import CKEditor, CKEditorField
+from forms import BlogPostForm, ckeditor, RegisterForm, LoginForm, CommentForm
+
 from datetime import date
 import smtplib
 
@@ -23,7 +21,6 @@ pip3 install -r requirements.txt
 This will install the packages from the requirements.txt for this project.
 '''
 
-ckeditor = CKEditor()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
@@ -46,14 +43,6 @@ class BlogPost(db.Model):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     author: Mapped[str] = mapped_column(String(250), nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
-
-class BlogPostForm(FlaskForm):
-    title = StringField(label='Title', validators=[DataRequired()])
-    subtitle = StringField(label='Subtitile', validators=[DataRequired()])
-    author = StringField(label='Your name', validators=[DataRequired()])
-    img_url = StringField(label='URL of post IMG', validators=[DataRequired(), URL()])
-    body = CKEditorField(label='Your blog content', validators=[DataRequired()])
-    submit = SubmitField(label='Submit')
 
 with app.app_context():
     db.create_all()
