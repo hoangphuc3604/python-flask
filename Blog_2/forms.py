@@ -9,7 +9,6 @@ ckeditor = CKEditor()
 class BlogPostForm(FlaskForm):
     title = StringField(label='Title', validators=[DataRequired()])
     subtitle = StringField(label='Subtitile', validators=[DataRequired()])
-    author = StringField(label='Your name', validators=[DataRequired()])
     img_url = StringField(label='URL of post IMG', validators=[DataRequired(), URL()])
     body = CKEditorField(label='Your blog content', validators=[DataRequired()])
     submit = SubmitField(label='Submit')

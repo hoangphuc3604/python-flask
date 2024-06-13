@@ -1,9 +1,13 @@
 from flask import Flask, render_template, redirect, url_for, request
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Text
 from forms import BlogPostForm, ckeditor, RegisterForm, LoginForm, CommentForm
+from typing import List
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 
 from datetime import date
 import smtplib
@@ -33,19 +37,47 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
+#Loggin Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.get_or_404(User, user_id)
+
+# CONFIGURE COMMENT TABLE
+# class Comment(db.Model):
+#     __tablename__ = 'comments'
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     text: Mapped[str] = mapped_column(Text, nullable=False)
+#     post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("blog_posts.id"))
+#     post: Mapped["BlogPost"] = relationship("BlogPost", back_populates="comments")
 
 # CONFIGURE TABLE
 class BlogPost(db.Model):
+    __tablename__ = 'blog_posts'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
     date: Mapped[str] = mapped_column(String(250), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    author: Mapped[str] = mapped_column(String(250), nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
+    # comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="post")
+    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
+    author = relationship("User", back_populates="posts")
+
+#CONFIGURE USER TABLE
+class User(UserMixin ,db.Model):
+    __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(250), nullable=False)
+    name: Mapped[str] = mapped_column(String(250), nullable=False)
+    posts = relationship("BlogPost", back_populates="author")
 
 with app.app_context():
     db.create_all()
+
 
 # EMAIL CONFIG
 user = "lequydonphuninhquangnam@gmail.com"
@@ -128,5 +160,28 @@ def contact():
         return render_template("contact.html", header="Successfully sent your message!!")
 
 
+# REGISTER FEATURE
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        new_user = User(
+            email=form.email.data,
+            password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8),
+            name=form.name.data
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+        return redirect(url_for('get_all_posts'))
+    return render_template('register.html', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        pass
+    return render_template('login.html', form=form)
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5003)
+    app.run(debug=True)
