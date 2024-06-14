@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, PasswordField
 from wtforms.validators import DataRequired, URL, ValidationError
 from flask_ckeditor import CKEditorField, CKEditor
 
@@ -9,7 +9,6 @@ ckeditor = CKEditor()
 class BlogPostForm(FlaskForm):
     title = StringField(label='Title', validators=[DataRequired()])
     subtitle = StringField(label='Subtitile', validators=[DataRequired()])
-    author = StringField(label='Your name', validators=[DataRequired()])
     img_url = StringField(label='URL of post IMG', validators=[DataRequired(), URL()])
     body = CKEditorField(label='Your blog content', validators=[DataRequired()])
     submit = SubmitField(label='Submit')
@@ -36,17 +35,16 @@ class Length(object):
 
 class RegisterForm(FlaskForm):
     email = StringField(label='Email', validators=[DataRequired(), Email(message='Invalid email address.')])
-    password = StringField(label='Password', validators=[DataRequired(), Length(min=8, message='Password must be at least 8 characters long.')])
+    password = PasswordField(label='Password', validators=[DataRequired(), Length(min=8, message='Password must be at least 8 characters long.')])
     name = StringField(label='Name', validators=[DataRequired()])
+    avatar_img = StringField("Avatar URL (Not required)", validators=[])
     submit = SubmitField(label='Sign me up!')
 
-# TODO: Create a LoginForm to login existing users
 class LoginForm(FlaskForm):
     email = StringField(label='Email', validators=[DataRequired(), Email(message='Invalid email address.')])
-    password = StringField(label='Password', validators=[DataRequired(), Length(min=8, message='Password must be at least 8 characters long.')])
+    password = PasswordField(label='Password', validators=[DataRequired(), Length(min=8, message='Password must be at least 8 characters long.')])
     submit = SubmitField(label='Log me in!')
 
-# TODO: Create a CommentForm so users can leave comments below posts
 class CommentForm(FlaskForm):
-    comment = CKEditorField(label='Your comment', validators=[DataRequired()])
+    comment = StringField(label='Your comment', validators=[DataRequired()])
     submit = SubmitField(label='Submit')
