@@ -10875,3 +10875,8 @@ header.masthead .post-heading .meta a {
   align-items: center;
   padding: 20px;
 }
+
+.chat-btn:hover {
+ background-color: #5DE2E7;
+ border-color: #5DE2E7;
+}

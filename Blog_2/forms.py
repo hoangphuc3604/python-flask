@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField
+from wtforms import StringField, SubmitField, PasswordField, SelectField
 from wtforms.validators import DataRequired, URL, ValidationError
 from flask_ckeditor import CKEditorField, CKEditor
 
@@ -37,6 +37,7 @@ class RegisterForm(FlaskForm):
     email = StringField(label='Email', validators=[DataRequired(), Email(message='Invalid email address.')])
     password = PasswordField(label='Password', validators=[DataRequired(), Length(min=8, message='Password must be at least 8 characters long.')])
     name = StringField(label='Name', validators=[DataRequired()])
+    exp = SelectField(label='Experience', choices=["Fresher Journalist", "Junior Journalist", "Senior Journalist", "Editor", "Publisher"], validators=[DataRequired()])
     avatar_img = StringField("Avatar URL (Not required)", validators=[])
     submit = SubmitField(label='Sign me up!')
 

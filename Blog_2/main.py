@@ -67,6 +67,18 @@ class User(UserMixin ,db.Model):
     posts = relationship("BlogPost", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     avatar_img: Mapped[str] = mapped_column(String(250), nullable=False)
+    exp: Mapped[str] = mapped_column(String(250), nullable=False)
+    rating: Mapped[float] = mapped_column(Integer)
+
+# FOLLOW TABLE
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('follower_id', 'followed_id', name='unique_follow'),)
+    follower = db.relationship("User", foreign_keys=[follower_id])
+    followed = db.relationship("User", foreign_keys=[followed_id])
 
 with app.app_context():
     db.create_all()
@@ -205,7 +217,9 @@ def register():
                 email=form.email.data,
                 password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8),
                 name=form.name.data,
-                avatar_img=form.avatar_img.data or "https://th.bing.com/th/id/R.ed67f16becae2b6600d91217c40de612?rik=QXfa1X0r1AvcKA&pid=ImgRaw&r=0"
+                avatar_img=form.avatar_img.data or "https://th.bing.com/th/id/R.ed67f16becae2b6600d91217c40de612?rik=QXfa1X0r1AvcKA&pid=ImgRaw&r=0",
+                exp=form.exp.data,
+                rating=0,
             )
             db.session.add(new_user)
             db.session.commit()
@@ -245,7 +259,44 @@ def logout():
 @app.route('/profile/<int:user_id>')
 def show_profile(user_id):
     user = db.get_or_404(User, user_id)
-    return render_template('profile.html', user=user, logged_in=current_user.is_authenticated)
+    number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == user_id)).scalars().all())
+    number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
+    return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error=None, current_user=current_user)
+
+def follow_user(follower_user_id, followed_user_id):
+    follower = User.query.filter_by(id=follower_user_id).first()
+    followed = User.query.filter_by(id=followed_user_id).first()
+
+    if not follower or not followed:
+        return {"error": "Follower or followed user not found."}, 404
+    
+    if follower.id == followed.id:
+        return {"error": "User cannot follow themselves."}, 400
+    
+    follow = Follow.query.filter_by(follower_id=follower.id, followed_id=followed.id).first()  
+    if follow:
+        return {"error": "User already followed."}, 400
+    
+    new_follow = Follow (
+        follower_id=follower_user_id,
+        followed_id=followed_user_id,
+    )
+    db.session.add(new_follow)
+    db.session.commit()
+
+    return {"message": "Follow successful."}, 201
+
+#FOLLOW FEATURE
+@app.route('/follow/<int:follower_id>/<int:followed_id>')
+def follow(follower_id, followed_id):
+    result, code = follow_user(follower_id, followed_id)
+    if code == 404 or code == 400:
+        user = db.get_or_404(User, followed_id)
+        number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == followed_id)).scalars().all())
+        number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
+        return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error="Cannot follow this person!!")
+    else:
+        return redirect(url_for('show_profile', user_id=followed_id))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)

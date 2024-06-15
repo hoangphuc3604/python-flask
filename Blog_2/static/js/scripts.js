@@ -27,3 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
         scrollPos = currentTop;
     });
 })
+
+follow_btn = document.getElementById('follow-btn-profile')
+console.log(follow_btn.classList)
+follow_btn.addEventListener('click', () => {
+    fetch('/follow/' + follow_btn.classList[follow_btn.classList.length - 1] + '/' + follow_btn.classList[follow_btn.classList.length - 2])
+})

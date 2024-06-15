@@ -14,30 +14,33 @@
                       alt="Generic placeholder image" class="img-fluid" style="width: 180px; border-radius: 10px;">
                   </div>
                   <div class="flex-grow-1 ms-3">
-                    <h5 class="mb-1">Danny McLoan</h5>
-                    <p class="mb-2 pb-1">Senior Journalist</p>
+                    <h5 class="mb-1">{{ user.name }}</h5>
+                    <p class="mb-2 pb-1">{{ user.exp }}</p>
                     <div class="d-flex justify-content-start rounded-3 p-2 mb-2 bg-body-tertiary">
                       <div>
                         <p class="small text-muted mb-1">Articles</p>
-                        <p class="mb-0">41</p>
+                        <p class="mb-0">{{ num_post }}</p>
                       </div>
                       <div class="px-3">
                         <p class="small text-muted mb-1">Followers</p>
-                        <p class="mb-0">976</p>
+                        <p class="mb-0">{{ num_fl }}</p>
                       </div>
                       <div>
                         <p class="small text-muted mb-1">Rating</p>
-                        <p class="mb-0">8.5</p>
+                        <p class="mb-0">{{ user.rating }}</p>
                       </div>
                     </div>
                     <div class="d-flex pt-1">
-                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-primary me-1 flex-grow-1">Chat</button>
-                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary flex-grow-1">Follow</button>
+                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-primary me-1 flex-grow-1 chat-btn" id="chat-btn-profile">Chat</button>
+                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary flex-grow-1 {{user.id}} {{current_user.id}}" id="follow-btn-profile">Follow</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+          <div style="color: red">
+            {{ error }}
           </div>
         </div>
       </section>
