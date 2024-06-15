@@ -8,7 +8,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 
-from datetime import date
+from datetime import datetime, date
 import smtplib
 
 
@@ -107,13 +107,14 @@ def show_post(post_id):
             text=form.comment.data,
             post=current_post,
             author=current_user,
-            date=date.today().strftime("%B %d, %Y")
+            date=datetime.today().strftime("%B %d, %Y %I:%M %p")
         )
         db.session.add(new_comment)
         db.session.commit()
+        form.comment.data = ""
 
     comments = db.session.execute(db.select(Comment)).scalars()
-    return render_template("post.html", post=current_post, logged_in=current_user.is_authenticated, form=form, comments=comments)
+    return render_template("post.html", post=current_post, logged_in=current_user.is_authenticated, form=form, comments=comments, current_user=current_user)
 
 @app.route('/new-post', methods=["GET", "POST"])
 @admin_only
@@ -153,6 +154,7 @@ def edit_post(post_id):
     )
     return render_template('make-post.html', form=edit_form, is_edit=True, logged_in=current_user.is_authenticated)
 
+# DELETE POST
 @app.route('/delete/<int:post_id>')
 @admin_only
 def delete_post(post_id):
@@ -161,7 +163,15 @@ def delete_post(post_id):
     db.session.commit()
     return redirect(url_for('get_all_posts'))
 
-# Below is the code from previous lessons. No changes needed.
+# DELETE COMMENT
+@app.route('/delete-comment/<int:comment_id>')
+@admin_only
+def delete_comment(comment_id):
+    comment = db.get_or_404(Comment, comment_id)
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('get_all_posts'))
+
 @app.route("/about")
 def about():
     return render_template("about.html", logged_in=current_user.is_authenticated)
@@ -195,7 +205,7 @@ def register():
                 email=form.email.data,
                 password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8),
                 name=form.name.data,
-                avatar_img=(form.avatar_img.data or url_for('../static/assets/img/avatar.jpg'))
+                avatar_img=form.avatar_img.data or "https://th.bing.com/th/id/R.ed67f16becae2b6600d91217c40de612?rik=QXfa1X0r1AvcKA&pid=ImgRaw&r=0"
             )
             db.session.add(new_user)
             db.session.commit()
@@ -203,6 +213,7 @@ def register():
             return redirect(url_for('get_all_posts'))
     return render_template('register.html', form=form, logged_in=current_user.is_authenticated)
 
+# LOGIN FEATURE
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -224,10 +235,17 @@ def login():
             
     return render_template('login.html', form=form, logged_in=current_user.is_authenticated)
 
+# LOGOUT FEATURE
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('get_all_posts'))  
+
+# PROFILE PAGE
+@app.route('/profile/<int:user_id>')
+def show_profile(user_id):
+    user = db.get_or_404(User, user_id)
+    return render_template('profile.html', user=user, logged_in=current_user.is_authenticated)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -10851,3 +10851,27 @@ header.masthead .post-heading .meta a {
     color: #ee6f57;
     text-align: center;
 }
+
+/* My CSS */
+
+.comment-block {
+  position: relative;
+}
+
+.close-anchor  {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: black;
+  padding: 5px;
+}
+
+.close-anchor:hover {
+  color: red;
+}
+
+.profile-box {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
