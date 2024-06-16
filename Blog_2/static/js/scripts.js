@@ -29,16 +29,25 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 
 follow_btn = document.getElementById('follow-btn-profile')
+fl = follow_btn.classList[follow_btn.classList.length - 2].split('-')
+followed = fl[0]
+follower = fl[1]
+
 follow_btn.addEventListener('click', () => {
     if (follow_btn.classList[follow_btn.classList.length - 1] == 'not-fl') {
+        if (follower == followed) {
+            alert('You cannot follow yourself !!')
+            return
+        }
+
         follow_btn.classList.remove('not-fl')
         follow_btn.classList.add('fl')
         follow_btn.innerHTML = 'Unfollow'
         fetch('/follow', {
             method: 'POST',
             body: JSON.stringify({
-                'follower': follow_btn.classList[follow_btn.classList.length - 2],
-                'followed': follow_btn.classList[follow_btn.classList.length - 3]
+                'follower': follower,
+                'followed': followed
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -51,8 +60,8 @@ follow_btn.addEventListener('click', () => {
         fetch('/unfollow', {
             method: 'POST',
             body: JSON.stringify({
-                'follower': follow_btn.classList[follow_btn.classList.length - 2],
-                'followed': follow_btn.classList[follow_btn.classList.length - 3]
+                'follower': follower,
+                'followed': followed
             }),
             headers: {
                 'Content-Type': 'application/json'

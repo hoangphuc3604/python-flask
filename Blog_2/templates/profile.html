@@ -32,7 +32,7 @@
                     </div>
                     <div class="d-flex pt-1">
                       <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-primary me-1 flex-grow-1 chat-btn" id="chat-btn-profile">Chat</button>
-                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary flex-grow-1 {{user.id}} {{current_user.id}} {{btn_class}}" id="follow-btn-profile">
+                      <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary flex-grow-1 {{user.id}}-{{current_user.id}} {{btn_class}}" id="follow-btn-profile">
                         {% if btn_class == "not-fl" %}
                           Follow
                         {% else %}

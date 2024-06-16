@@ -28,7 +28,7 @@
         {{ post.body|safe }}
 
         <div class="d-flex justify-content-end mb-4">
-          {% if current_user.id == 1 %}
+          {% if current_user.id == post.author.id %}
             <a
               class="btn btn-primary float-right"
               href="{{ url_for('edit_post', post_id = post.id) }}"

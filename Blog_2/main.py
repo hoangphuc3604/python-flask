@@ -166,6 +166,7 @@ def edit_post(post_id):
 
 # DELETE POST
 @app.route('/delete/<int:post_id>')
+@admin_only
 def delete_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
     db.session.delete(post)
@@ -274,16 +275,6 @@ def show_profile(user_id):
 def follow_user(follower_user_id, followed_user_id):
     follower = User.query.filter_by(id=follower_user_id).first()
     followed = User.query.filter_by(id=followed_user_id).first()
-
-    if not follower or not followed:
-        return {"error": "Follower or followed user not found."}, 404
-    
-    if follower.id == followed.id:
-        return {"error": "User cannot follow themselves."}, 400
-    
-    follow = Follow.query.filter_by(follower_id=follower.id, followed_id=followed.id).first()  
-    if follow:
-        return {"error": "User already followed."}, 400
     
     new_follow = Follow (
         follower_id=follower_user_id,
@@ -302,13 +293,7 @@ def follow():
     followed_id = int(data['followed'])
     
     code, message = follow_user(follower_id, followed_id)
-    if code == 404 or code == 400:
-        user = db.get_or_404(User, followed_id)
-        number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == followed_id)).scalars().all())
-        number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
-        return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error="Cannot follow this person!!")
-    else:
-        return redirect(url_for('show_profile', user_id=followed_id))
+    return redirect(url_for('show_profile', user_id=followed_id))
     
 #UNFOLLOW FEATURE
 @app.route('/unfollow', methods=['POST'])
