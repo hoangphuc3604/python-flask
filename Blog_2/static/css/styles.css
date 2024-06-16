@@ -10851,3 +10851,44 @@ header.masthead .post-heading .meta a {
     color: #ee6f57;
     text-align: center;
 }
+
+/* My CSS */
+
+.comment-block {
+  position: relative;
+}
+
+.close-anchor  {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: black;
+  padding: 5px;
+}
+
+.close-anchor:hover {
+  color: red;
+}
+
+.profile-box {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
+
+.chat-btn:hover {
+ background-color: #5DE2E7;
+ border-color: #5DE2E7;
+}
+
+.fl {
+  border-color: #799F51;
+  background-color: #80ff80;
+  color: #000;
+}
+
+.fl:hover {
+  border-color: #799F51;
+  background-color: #00b300;
+  color: #000;
+}

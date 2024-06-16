@@ -8,7 +8,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 
-from datetime import date
+from datetime import datetime, date
 import smtplib
 
 
@@ -67,6 +67,18 @@ class User(UserMixin ,db.Model):
     posts = relationship("BlogPost", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     avatar_img: Mapped[str] = mapped_column(String(250), nullable=False)
+    exp: Mapped[str] = mapped_column(String(250), nullable=False)
+    rating: Mapped[float] = mapped_column(Integer)
+
+# FOLLOW TABLE
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('follower_id', 'followed_id', name='unique_follow'),)
+    follower = db.relationship("User", foreign_keys=[follower_id])
+    followed = db.relationship("User", foreign_keys=[followed_id])
 
 with app.app_context():
     db.create_all()
@@ -107,16 +119,16 @@ def show_post(post_id):
             text=form.comment.data,
             post=current_post,
             author=current_user,
-            date=date.today().strftime("%B %d, %Y")
+            date=datetime.today().strftime("%B %d, %Y %I:%M %p")
         )
         db.session.add(new_comment)
         db.session.commit()
+        form.comment.data = ""
 
     comments = db.session.execute(db.select(Comment)).scalars()
-    return render_template("post.html", post=current_post, logged_in=current_user.is_authenticated, form=form, comments=comments)
+    return render_template("post.html", post=current_post, logged_in=current_user.is_authenticated, form=form, comments=comments, current_user=current_user)
 
 @app.route('/new-post', methods=["GET", "POST"])
-@admin_only
 def add_new_post():
     form = BlogPostForm()
     if form.validate_on_submit():
@@ -134,7 +146,6 @@ def add_new_post():
     return render_template("make-post.html", form=form, is_edit=False, logged_in=current_user.is_authenticated)
 
 @app.route('/edit-post/<int:post_id>', methods=["GET", "POST"])
-@admin_only
 def edit_post(post_id):
     form = BlogPostForm()
     post = db.get_or_404(BlogPost, post_id)
@@ -153,15 +164,23 @@ def edit_post(post_id):
     )
     return render_template('make-post.html', form=edit_form, is_edit=True, logged_in=current_user.is_authenticated)
 
+# DELETE POST
 @app.route('/delete/<int:post_id>')
-@admin_only
 def delete_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
     db.session.delete(post)
     db.session.commit()
     return redirect(url_for('get_all_posts'))
 
-# Below is the code from previous lessons. No changes needed.
+# DELETE COMMENT
+@app.route('/delete-comment/<int:comment_id>')
+@admin_only
+def delete_comment(comment_id):
+    comment = db.get_or_404(Comment, comment_id)
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('get_all_posts'))
+
 @app.route("/about")
 def about():
     return render_template("about.html", logged_in=current_user.is_authenticated)
@@ -195,7 +214,9 @@ def register():
                 email=form.email.data,
                 password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8),
                 name=form.name.data,
-                avatar_img=(form.avatar_img.data or url_for('../static/assets/img/avatar.jpg'))
+                avatar_img=form.avatar_img.data or "https://th.bing.com/th/id/R.ed67f16becae2b6600d91217c40de612?rik=QXfa1X0r1AvcKA&pid=ImgRaw&r=0",
+                exp=form.exp.data,
+                rating=0,
             )
             db.session.add(new_user)
             db.session.commit()
@@ -203,6 +224,7 @@ def register():
             return redirect(url_for('get_all_posts'))
     return render_template('register.html', form=form, logged_in=current_user.is_authenticated)
 
+# LOGIN FEATURE
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -224,10 +246,83 @@ def login():
             
     return render_template('login.html', form=form, logged_in=current_user.is_authenticated)
 
+# LOGOUT FEATURE
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('get_all_posts'))  
 
+# PROFILE PAGE
+@app.route('/profile/<int:user_id>')
+def show_profile(user_id):
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+    user = db.get_or_404(User, user_id)
+    number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == user_id)).scalars().all())
+    number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
+
+    follow = Follow.query.filter_by(follower_id=current_user.id, followed_id=user.id).first()
+    btn_class = ""
+    if follow:
+        btn_class = "fl"
+    else:
+        btn_class = "not-fl"
+
+    return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error=None, current_user=current_user, btn_class=btn_class)
+
+def follow_user(follower_user_id, followed_user_id):
+    follower = User.query.filter_by(id=follower_user_id).first()
+    followed = User.query.filter_by(id=followed_user_id).first()
+
+    if not follower or not followed:
+        return {"error": "Follower or followed user not found."}, 404
+    
+    if follower.id == followed.id:
+        return {"error": "User cannot follow themselves."}, 400
+    
+    follow = Follow.query.filter_by(follower_id=follower.id, followed_id=followed.id).first()  
+    if follow:
+        return {"error": "User already followed."}, 400
+    
+    new_follow = Follow (
+        follower_id=follower_user_id,
+        followed_id=followed_user_id,
+    )
+    db.session.add(new_follow)
+    db.session.commit()
+
+    return {"message": "Follow successful."}, 201
+
+#FOLLOW FEATURE
+@app.route('/follow', methods=['POST'])
+def follow():
+    data = request.get_json()
+    follower_id = int(data['follower'])
+    followed_id = int(data['followed'])
+    
+    code, message = follow_user(follower_id, followed_id)
+    if code == 404 or code == 400:
+        user = db.get_or_404(User, followed_id)
+        number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == followed_id)).scalars().all())
+        number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
+        return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error="Cannot follow this person!!")
+    else:
+        return redirect(url_for('show_profile', user_id=followed_id))
+    
+#UNFOLLOW FEATURE
+@app.route('/unfollow', methods=['POST'])
+def unfollow():
+    data = request.get_json()
+    follower_id = int(data['follower'])
+    followed_id = int(data['followed'])
+
+    follower = User.query.filter_by(id=follower_id).first()
+    followed = User.query.filter_by(id=followed_id).first()
+    follow = Follow.query.filter_by(follower_id=follower.id, followed_id=followed.id).first()
+    db.session.delete(follow)
+    db.session.commit()
+    return redirect(url_for('show_profile', user_id=followed_id))
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
