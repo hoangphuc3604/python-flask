@@ -258,10 +258,21 @@ def logout():
 # PROFILE PAGE
 @app.route('/profile/<int:user_id>')
 def show_profile(user_id):
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     user = db.get_or_404(User, user_id)
     number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == user_id)).scalars().all())
     number_of_follower = Follow.query.filter_by(followed_id=user.id).count()
-    return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error=None, current_user=current_user)
+
+    follow = Follow.query.filter_by(follower_id=current_user.id, followed_id=user.id).first()
+    btn_class = ""
+    if follow:
+        btn_class = "fl"
+    else:
+        btn_class = "not-fl"
+
+    return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error=None, current_user=current_user, btn_class=btn_class)
 
 def follow_user(follower_user_id, followed_user_id):
     follower = User.query.filter_by(id=follower_user_id).first()
@@ -287,9 +298,13 @@ def follow_user(follower_user_id, followed_user_id):
     return {"message": "Follow successful."}, 201
 
 #FOLLOW FEATURE
-@app.route('/follow/<int:follower_id>/<int:followed_id>')
-def follow(follower_id, followed_id):
-    result, code = follow_user(follower_id, followed_id)
+@app.route('/follow', methods=['POST'])
+def follow():
+    data = request.get_json()
+    follower_id = int(data['follower'])
+    followed_id = int(data['followed'])
+    
+    code, message = follow_user(follower_id, followed_id)
     if code == 404 or code == 400:
         user = db.get_or_404(User, followed_id)
         number_of_posts = len(db.session.execute(db.select(BlogPost).where(BlogPost.author_id == followed_id)).scalars().all())
@@ -297,6 +312,20 @@ def follow(follower_id, followed_id):
         return render_template('profile.html', user=user, num_fl=number_of_follower, num_post=number_of_posts, logged_in=current_user.is_authenticated, error="Cannot follow this person!!")
     else:
         return redirect(url_for('show_profile', user_id=followed_id))
+    
+#UNFOLLOW FEATURE
+@app.route('/unfollow', methods=['POST'])
+def unfollow():
+    data = request.get_json()
+    follower_id = int(data['follower'])
+    followed_id = int(data['followed'])
+
+    follower = User.query.filter_by(id=follower_id).first()
+    followed = User.query.filter_by(id=followed_id).first()
+    follow = Follow.query.filter_by(follower_id=follower.id, followed_id=followed.id).first()
+    db.session.delete(follow)
+    db.session.commit()
+    return redirect(url_for('show_profile', user_id=followed_id))
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

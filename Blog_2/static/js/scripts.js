@@ -29,7 +29,34 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 
 follow_btn = document.getElementById('follow-btn-profile')
-console.log(follow_btn.classList)
 follow_btn.addEventListener('click', () => {
-    fetch('/follow/' + follow_btn.classList[follow_btn.classList.length - 1] + '/' + follow_btn.classList[follow_btn.classList.length - 2])
+    if (follow_btn.classList[follow_btn.classList.length - 1] == 'not-fl') {
+        follow_btn.classList.remove('not-fl')
+        follow_btn.classList.add('fl')
+        follow_btn.innerHTML = 'Unfollow'
+        fetch('/follow', {
+            method: 'POST',
+            body: JSON.stringify({
+                'follower': follow_btn.classList[follow_btn.classList.length - 2],
+                'followed': follow_btn.classList[follow_btn.classList.length - 3]
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+    } else {
+        follow_btn.classList.remove('fl')
+        follow_btn.classList.add('not-fl')
+        follow_btn.innerHTML = 'Follow'
+        fetch('/unfollow', {
+            method: 'POST',
+            body: JSON.stringify({
+                'follower': follow_btn.classList[follow_btn.classList.length - 2],
+                'followed': follow_btn.classList[follow_btn.classList.length - 3]
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+    }
 })
