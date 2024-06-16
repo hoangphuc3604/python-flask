@@ -129,7 +129,6 @@ def show_post(post_id):
     return render_template("post.html", post=current_post, logged_in=current_user.is_authenticated, form=form, comments=comments, current_user=current_user)
 
 @app.route('/new-post', methods=["GET", "POST"])
-@admin_only
 def add_new_post():
     form = BlogPostForm()
     if form.validate_on_submit():
@@ -147,7 +146,6 @@ def add_new_post():
     return render_template("make-post.html", form=form, is_edit=False, logged_in=current_user.is_authenticated)
 
 @app.route('/edit-post/<int:post_id>', methods=["GET", "POST"])
-@admin_only
 def edit_post(post_id):
     form = BlogPostForm()
     post = db.get_or_404(BlogPost, post_id)
@@ -168,7 +166,6 @@ def edit_post(post_id):
 
 # DELETE POST
 @app.route('/delete/<int:post_id>')
-@admin_only
 def delete_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
     db.session.delete(post)

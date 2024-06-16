@@ -53,11 +53,13 @@
 
                   <div class="card-body">
                     <div class="d-flex flex-start align-items-center">
-                      <img class="rounded-circle shadow-1-strong me-3"
+                      <a href="{{url_for('show_profile', user_id=comment.author.id)}}">
+                        <img class="rounded-circle shadow-1-strong me-3"
                         src={{ comment.author.avatar_img }} alt="avatar" width="60"
-                        height="60" />
+                        height="60" />  
+                      </a>
                       <div>
-                        <h6 class="fw-bold text-primary mb-1"> {{comment.author.name}}</h6>
+                        <a href="{{url_for('show_profile', user_id=comment.author.id)}}"><h6 class="fw-bold text-primary mb-1"> {{comment.author.name}}</h6></a>
                         <p class="text-muted small mb-0">
                           Shared publicly - {{comment.date}}
                         </p>
